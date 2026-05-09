@@ -1,0 +1,41 @@
+random_seeds: [42, 123, 2026, 7, 999]
+
+dl:
+  epochs: 50
+  batch_size: 32
+  early_stopping_patience: 5
+  learning_rate: 0.001
+  hidden_size: 32
+  num_layers: 2
+  sequence_length: 10
+  dropout: 0.2
+
+automata:
+  window_size: 4
+  alphabet_size: 3
+  paa_segment_size: 8
+  smoothing_alpha: 1.0
+  param_grid:
+    window_size: [3, 4, 5, 6]
+    alphabet_size: [3, 4, 5, 6]
+
+noise:
+  gaussian_std: 0.1
+
+splits:
+  skab:
+    n_folds: 5
+    group_col: source_file
+  batadal:
+    train: 0.6
+    val: 0.2
+    test: 0.2
+
+paths:
+  skab_raw: data/raw/skab
+  batadal_raw: data/raw/batadal
+  results: results
+  figures: figures
+
+metrics:
+  primary: f1
