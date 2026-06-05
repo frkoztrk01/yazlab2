@@ -1,6 +1,8 @@
 # YazLab 2 — From Black-Box to Explainability: Probabilistic Automata for Time Series Analysis
 
 **Grup:** [Grup numaranızı ekleyin]  
+**Son güncelleme:** 5 Haziran 2026
+
 **Tarih:** 6 Haziran 2026  
 **Teslim:** 7 Haziran 2026, 23:59
 
