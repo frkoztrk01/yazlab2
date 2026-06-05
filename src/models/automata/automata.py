@@ -214,3 +214,5 @@ def _f1_score(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     if precision + recall == 0:
         return 0.0
     return 2 * precision * recall / (precision + recall)
+
+# Segment-level label alignment for BATADAL evaluation.
