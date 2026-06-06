@@ -89,11 +89,13 @@ def table2_robustness(records: list[dict]) -> str:
             for r in unseen_recs:
                 for fr in r.get("fold_results", []):
                     if fr.get("unseen_count", 0) > 0:
-                        det_rates.append(fr.get("detection_rate_unseen", 0))
-                    map_accs.append(fr.get("mapping_accuracy", 0))
+                        if fr.get("detection_rate_unseen") is not None:
+                            det_rates.append(fr["detection_rate_unseen"])
+                        if fr.get("mapping_accuracy") is not None:
+                            map_accs.append(fr["mapping_accuracy"])
 
-        det_str = _fmt_mean(det_rates) if model == "automata" and det_rates else ("—" if model != "automata" else "0.000")
-        map_str = _fmt_mean(map_accs) if model == "automata" and map_accs else ("—" if model != "automata" else "—")
+        det_str = _fmt_mean(det_rates) if det_rates else ("—" if model != "automata" else "—")
+        map_str = _fmt_mean(map_accs) if map_accs else ("—" if model != "automata" else "—")
 
         lines.append(
             f"| {labels[model]} | {_fmt_mean_std(orig)} | {_fmt_mean_std(noisy)} | {det_str} | {map_str} |"

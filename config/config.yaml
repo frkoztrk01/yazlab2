@@ -1,4 +1,15 @@
 random_seeds: [42, 123, 2026, 7, 999]
+pca_random_state: 42
+
+automata:
+  window_size: 4
+  alphabet_size: 3
+  paa_segment_size: 8
+  smoothing_alpha: 1.0
+  unseen_holdout_ratio: 0.15
+  param_grid:
+    window_size: [3, 4, 5, 6]
+    alphabet_size: [3, 4, 5, 6]
 
 dl:
   epochs: 50
@@ -9,15 +20,6 @@ dl:
   num_layers: 2
   sequence_length: 10
   dropout: 0.2
-
-automata:
-  window_size: 4
-  alphabet_size: 3
-  paa_segment_size: 8
-  smoothing_alpha: 1.0
-  param_grid:
-    window_size: [3, 4, 5, 6]
-    alphabet_size: [3, 4, 5, 6]
 
 noise:
   gaussian_std: 0.1

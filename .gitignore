@@ -9,6 +9,11 @@ venv/
 .DS_Store
 data/raw/
 results/
-figures/
+figures/*
+!figures/cm_skab_lstm_original.png
+!figures/state_diagram_skab_original.png
+!figures/heatmap_skab_original.png
+!figures/param_sensitivity_w4.png
+!figures/roc_skab_lstm_original.png
 *.pt
 *.pth

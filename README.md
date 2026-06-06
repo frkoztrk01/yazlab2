@@ -1,7 +1,7 @@
 # YazLab 2 — From Black-Box to Explainability: Probabilistic Automata for Time Series Analysis
 
-**Grup:** [Grup numaranızı ekleyin]  
-**Son güncelleme:** 5 Haziran 2026
+**Grup:** 48 — Faruk & Nilay Suzer  
+**Son güncelleme:** 6 Haziran 2026
 
 **Tarih:** 6 Haziran 2026  
 **Teslim:** 7 Haziran 2026, 23:59
@@ -85,7 +85,11 @@ Karar: path_probability < threshold → ANOMALY
 
 ### 3.4 Unseen Pattern Yönetimi
 
-Test sırasında train SAX sözlüğünde bulunmayan pattern'lar `unseen` olarak işaretlenir. **Levenshtein (Edit Distance)** ile en yakın train pattern bulunur ve sistem bu state üzerinden devam eder. Bu mekanizma `tests/` altında birim testlerle doğrulanmıştır.
+Test sırasında train SAX sözlüğünde bulunmayan pattern'lar `unseen` olarak işaretlenir. **Levenshtein (Edit Distance)** ile en yakın train pattern bulunur ve sistem bu state üzerinden devam eder.
+
+`unseen` senaryosunda, otomata eğitiminde görülen benzersiz pattern'ların **%15'i** (`config.yaml → automata.unseen_holdout_ratio`) çıkarım sözlüğünden bilinçli olarak çıkarılır. Bu, sınırlı sembol alanında (alphabet=3, window=4 → en fazla 81 pattern) doğal olarak unseen pattern oluşmaması durumunda Levenshtein eşleme mekanizmasının davranışını ölçmek için uygulanır. DL modelleri bu senaryoda orijinal veri ile değerlendirilir (unseen kavramı otomata'ya özgüdür).
+
+Bu mekanizma `tests/` altında birim testlerle doğrulanmıştır.
 
 ### 3.5 Deney Senaryoları
 
@@ -93,7 +97,7 @@ Test sırasında train SAX sözlüğünde bulunmayan pattern'lar `unseen` olarak
 |---------|----------|
 | `original` | Temiz (ön işlenmiş) veri |
 | `noisy` | Gaussian gürültü (`std=0.1`) |
-| `unseen` | Otomata için unseen pattern metrikleri (mapping accuracy, unseen count) |
+| `unseen` | Otomata için train sözlüğünden %15 pattern holdout; Levenshtein eşleme metrikleri |
 
 ---
 
@@ -106,7 +110,7 @@ config/config.yaml → src/data/ → src/preprocessing/ → src/models/ → src/
                               ↘ experiments/run_experiment.py
 ```
 
-Parametre değişikliği config üzerinden yapılır; hard-coded değer kullanılmaz.
+Parametre değişikliği config üzerinden yapılır; kod içinde yalnızca config'ten okunan sabitler kullanılır.
 
 ---
 
@@ -145,9 +149,9 @@ Her otomata kararı için üretilen bilgiler:
 
 ## 6. Deney Sonuçları
 
-Tüm deneyler 5 seed ile tekrarlanmış; sonuçlar ortalama ± standart sapma olarak raporlanmıştır.
+Tüm deneyler 5 seed ile tekrarlanmış; sonuçlar ortalama ± standart sapma olarak raporlanmıştır. Tablolar `scripts/generate_tables.py` ile `results/` JSON dosyalarından üretilir.
 
-### Tablo 1: Model Performansı ve Stabilite (F1 ± std, original senaryo)
+### Tablo 1: Model Performansı ve Stabilitesi (Ortalama F1-score ± Standart Sapma)
 
 | Model | SKAB | BATADAL |
 |-------|------|---------|
@@ -156,18 +160,18 @@ Tüm deneyler 5 seed ile tekrarlanmış; sonuçlar ortalama ± standart sapma ol
 | 1D-CNN | 0.832 ± 0.013 | 0.294 ± 0.073 |
 | Automata | 0.368 ± 0.035 | 0.000 ± 0.000 |
 
-**Yorum:** SKAB'de LSTM en yüksek F1'e ulaşır; otomata açıklanabilir olmasına rağmen segment bazlı sembolik temsil nedeniyle daha düşük performans gösterir. BATADAL'de kısmi etiketleme (`ATT_FLAG`: yalnızca 219 saldırı / 4177 kayıt) ve aşırı sınıf dengesizliği tüm modelleri zorlar; otomata PC1 indirgeme + PAA kaybı nedeniyle en düşük skoru alır.
+**Yorum:** SKAB'de LSTM en yüksek F1'e ulaşır; otomata açıklanabilir olmasına rağmen segment bazlı sembolik temsil nedeniyle daha düşük performans gösterir. BATADAL'de kısmi etiketleme (`ATT_FLAG`: yalnızca 219 saldırı / 4177 kayıt) ve aşırı sınıf dengesizliği (~%5 saldırı) tüm modelleri zorlar.
 
-### Tablo 2: Gürültü ve Unseen Analizi — SKAB
+### Tablo 2: Gürültü Etkisi ve Unseen Senaryo Analizi (SKAB)
 
-| Model | Original F1 | Noisy F1 | Unseen F1 |
-|-------|-------------|----------|-----------|
-| LSTM | 0.843 ± 0.008 | 0.833 ± 0.013 | 0.843 ± 0.008 |
-| GRU | 0.837 ± 0.013 | 0.827 ± 0.009 | 0.837 ± 0.013 |
-| 1D-CNN | 0.832 ± 0.013 | 0.830 ± 0.013 | 0.832 ± 0.013 |
-| Automata | 0.368 ± 0.035 | 0.370 ± 0.047 | 0.368 ± 0.035 |
+| Model | Orijinal (F1) | Gürültülü (F1) | Det. Rate | Map. Acc. |
+|-------|---------------|----------------|-----------|-----------|
+| LSTM | 0.843 ± 0.008 | 0.833 ± 0.013 | — | — |
+| GRU | 0.837 ± 0.013 | 0.827 ± 0.009 | — | — |
+| 1D-CNN | 0.832 ± 0.013 | 0.830 ± 0.013 | — | — |
+| Automata | 0.368 ± 0.035 | 0.370 ± 0.047 | 1.000 | 1.000 |
 
-**Yorum:** DL modelleri Gaussian gürültüde ~1 puanlık F1 düşüşü ile robust kalır. Otomata gürültüde benzer düzeyde kalır; unseen senaryoda Levenshtein eşlemesi devreye girer.
+**Yorum:** DL modelleri Gaussian gürültüde (~1 puan F1 düşüşü) robust kalır. Otomata için unseen senaryosunda train sözlüğünden %15 pattern holdout uygulanmıştır; Levenshtein eşlemesi **%100 mapping accuracy** ile tüm unseen pattern'ları en yakın train state'e yönlendirmiştir. Detection rate 1.000, holdout pattern'ların düşük path probability ile anomali olarak işaretlendiğini gösterir.
 
 ### Tablo 2b: Gürültü Analizi — BATADAL
 
@@ -178,24 +182,35 @@ Tüm deneyler 5 seed ile tekrarlanmış; sonuçlar ortalama ± standart sapma ol
 | 1D-CNN | 0.294 ± 0.073 | 0.303 ± 0.068 |
 | Automata | 0.000 ± 0.000 | 0.158 ± 0.034 |
 
-### Tablo 4: Otomata Parametre Duyarlılığı
+**BATADAL Otomata tartışması:** Original senaryoda F1=0.000, çünkü (1) PC1 indirgeme çok boyutlu SCADA sinyallerinde saldırı imzasını kaybeder, (2) PAA segmentasyonu (8 nokta) saldırı pencerelerini yumuşatır, (3) aşırı sınıf dengesizliği nedeniyle validation F1 eşik ayarı yetersiz kalır. Gürültülü senaryoda F1≈0.158'e yükselmesi, gürültünün sembolik temsilde sınıf ayrımını kısmen artırdığını gösterir — bu davranış sembolik modelin veri setine duyarlılığını ortaya koyar.
 
-Sabit seed'ler (42, 123) ile window/alphabet grid taraması yapılmıştır. Sonuç grafikleri:
+### Tablo 3: Cross-Dataset Performans Karşılaştırması (F1-score, LSTM)
 
-- `figures/param_sensitivity_w3.png`
-- `figures/param_sensitivity_w4.png`
-- `figures/param_sensitivity_w5.png`
-- `figures/param_sensitivity_w6.png`
+| Train / Test | SKAB | BATADAL |
+|--------------|------|---------|
+| Train: SKAB | 0.238 | 0.083 |
+| Train: BATADAL | 0.519 | 0.099 |
 
-Window size arttıkça state sayısı artar, geçiş yoğunluğu düşer; alphabet size arttıkça sembolik ayrım artar ancak seyrek geçiş matrisi oluşabilir.
+**Yorum:** Cross-dataset transfer (PC1 üzerinden LSTM) her iki yönde de düşük F1 gösterir. SKAB→BATADAL (0.083) ve BATADAL→SKAB (0.519) sonuçları, farklı sensör tipleri ve etiketleme stratejileri arasında doğrudan model transferinin sınırlı olduğunu doğrular. Köşegen değerler (SKAB→SKAB: 0.238, BATADAL→BATADAL: 0.099) tek fold cross-dataset protokolü nedeniyle tam deney matrisinden düşüktür.
 
-### Tablo 5: Runtime Karşılaştırması
+### Tablo 4: Automata Parametre Duyarlılık Analizi (F1-score, SKAB)
 
-| Model | Training (s) | Inference (s) |
-|-------|--------------|-----------------|
-| LSTM | 5.07 | 0.035 |
-| GRU | 3.98 | 0.019 |
-| 1D-CNN | 3.21 | 0.032 |
+| Parametre | Değer = 3 | Değer = 4 | Değer = 5 | Değer = 6 |
+|-----------|-----------|-----------|-----------|-----------|
+| Window Size | 0.459 | 0.368 | 0.433 | 0.424 |
+| Alphabet Size | 0.368 | 0.488 | 0.512 | 0.526 |
+
+**Yorum:** Window=3 en yüksek F1 (0.459); kısa pencere daha az seyrek geçiş matrisi oluşturur. Alphabet size arttıkça sembolik ayrım artar (0.368→0.526); ancak seyrek geçiş matrisi riski de büyür. Sabit karşılaştırma parametreleri (window=4, alphabet=3) orta düzey performans sunar.
+
+Grafikler: `figures/param_sensitivity_w3.png` … `figures/param_sensitivity_w6.png`
+
+### Tablo 5: Modellerin Çalışma Süresi (Runtime) Karşılaştırması
+
+| Model | Training Time (sn) | Inference Time (sn) |
+|-------|--------------------|---------------------|
+| LSTM | 5.067 | 0.035 |
+| GRU | 3.980 | 0.019 |
+| 1D-CNN | 3.212 | 0.032 |
 | Automata | 0.002 | 0.000 |
 
 **Yorum:** Otomata eğitim/çıkarım açısından DL modellerinden ~1000× daha hızlıdır; gerçek zamanlı açıklanabilir izleme için uygundur.
@@ -203,6 +218,8 @@ Window size arttıkça state sayısı artar, geçiş yoğunluğu düşer; alphab
 ---
 
 ## 7. Görselleştirmeler
+
+Temel grafikler repo'da (`figures/`); tam set deneylerden sonra `experiments/run_experiment.py --run-all` ile üretilir.
 
 | Görsel | Dosya |
 |--------|-------|
@@ -217,6 +234,7 @@ Window size arttıkça state sayısı artar, geçiş yoğunluğu düşer; alphab
 ![SKAB LSTM Confusion Matrix](figures/cm_skab_lstm_original.png)
 ![Otomata State Diagram](figures/state_diagram_skab_original.png)
 ![Transition Heatmap](figures/heatmap_skab_original.png)
+![Parametre Duyarlılık (window=4)](figures/param_sensitivity_w4.png)
 
 ---
 
@@ -246,6 +264,8 @@ Detaylı sonuçlar: `results/statistical_tests.json`
 
 ## 9. Veri Setleri Arası Karşılaştırmalı Analiz
 
+Tablo 3'e bakınız. Özet:
+
 | Özellik | SKAB | BATADAL |
 |---------|------|---------|
 | Veri tipi | Endüstriyel sensör (valf) | SCADA su dağıtım |
@@ -263,7 +283,7 @@ SKAB'de DL modelleri otomatayı büyük farkla geçer; BATADAL'de tüm modeller 
 
 1. **Performans:** DL modelleri (özellikle LSTM/GRU) SKAB'de yüksek F1 ile otomatayı geride bırakır. BATADAL'de kısmi etiketleme tüm yaklaşımları sınırlar.
 2. **Robustness:** Gaussian gürültüde DL modelleri ~1 puan F1 kaybı ile dayanıklıdır; otomata benzer profil gösterir.
-3. **Unseen pattern:** Levenshtein eşlemesi birim testlerle doğrulanmıştır; test sırasında sözlük dışı pattern'lar en yakın train state'e yönlendirilir.
+3. **Unseen pattern:** %15 dictionary holdout ile Levenshtein eşlemesi test edilmiştir; mapping accuracy %100, detection rate 1.000 (SKAB).
 4. **Açıklanabilirlik:** Otomata her adımda state, geçiş olasılığı, path probability ve karar gerekçesi üretir — DL modelleri bunu sağlayamaz.
 5. **Hız:** Otomata milisaniye düzeyinde eğitim/çıkarım sunar; edge/IoT senaryoları için uygundur.
 
@@ -282,11 +302,11 @@ yazlab2/
 ├── src/evaluation/        # Metrics, stats, plots
 ├── src/pipeline/          # Experiment orchestration
 ├── experiments/run_experiment.py
-├── tests/                 # Levenshtein + unseen birim testleri (20 test)
+├── tests/                 # Levenshtein + unseen + holdout birim testleri (21 test)
 ├── scripts/download_data.py
 ├── scripts/generate_tables.py
-├── results/               # JSON deney logları
-└── figures/               # Grafikler
+├── results/               # JSON deney logları (gitignore; yeniden üretilebilir)
+└── figures/               # Grafikler (temel set repo'da; tam set deneylerden sonra)
 ```
 
 ---

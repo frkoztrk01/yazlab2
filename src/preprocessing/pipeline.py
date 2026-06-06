@@ -18,13 +18,19 @@ class Preprocessor:
     pca: PCA | None = None
     feature_columns: list[str] = field(default_factory=list)
 
-    def fit(self, df: pd.DataFrame, feature_columns: list[str], use_pca: bool = False) -> "Preprocessor":
+    def fit(
+        self,
+        df: pd.DataFrame,
+        feature_columns: list[str],
+        use_pca: bool = False,
+        pca_random_state: int | None = None,
+    ) -> "Preprocessor":
         self.feature_columns = feature_columns
         X = df[feature_columns].values
         X = self.imputer.fit_transform(X)
         X = self.scaler.fit_transform(X)
         if use_pca:
-            self.pca = PCA(n_components=1, random_state=42)
+            self.pca = PCA(n_components=1, random_state=pca_random_state)
             self.pca.fit(X)
         return self
 
@@ -38,8 +44,14 @@ class Preprocessor:
             return self.pca.transform(X).ravel()
         return X
 
-    def fit_transform(self, df: pd.DataFrame, feature_columns: list[str], use_pca: bool = False) -> np.ndarray:
-        self.fit(df, feature_columns, use_pca=use_pca)
+    def fit_transform(
+        self,
+        df: pd.DataFrame,
+        feature_columns: list[str],
+        use_pca: bool = False,
+        pca_random_state: int | None = None,
+    ) -> np.ndarray:
+        self.fit(df, feature_columns, use_pca=use_pca, pca_random_state=pca_random_state)
         return self.transform(df, return_pc1=use_pca)
 
 

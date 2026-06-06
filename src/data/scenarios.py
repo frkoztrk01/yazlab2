@@ -1,4 +1,4 @@
-"""Scenario generators: original, noisy, unseen."""
+"""Scenario generators: original, noisy, unseen (dictionary holdout for automata)."""
 
 from __future__ import annotations
 

@@ -48,6 +48,7 @@ class ProbabilisticAutomata:
     config: AutomataConfig
     breakpoints: np.ndarray | None = None
     pattern_dictionary: set[str] = field(default_factory=set)
+    held_out_patterns: set[str] = field(default_factory=set)
     transition_model: TransitionModel = field(default_factory=TransitionModel)
     threshold: float = 0.01
 
@@ -74,13 +75,35 @@ class ProbabilisticAutomata:
             indices.append(orig_idx)
         return np.array(indices, dtype=int)
 
-    def fit(self, train_series: np.ndarray, val_series: np.ndarray | None = None, val_labels: np.ndarray | None = None) -> "ProbabilisticAutomata":
+    def fit(
+        self,
+        train_series: np.ndarray,
+        val_series: np.ndarray | None = None,
+        val_labels: np.ndarray | None = None,
+        dictionary_holdout_ratio: float = 0.0,
+        holdout_seed: int = 42,
+    ) -> "ProbabilisticAutomata":
         paa_values = paa_transform(train_series, self.config.paa_segment_size)
         self.breakpoints = fit_sax_breakpoints(paa_values, self.config.alphabet_size)
 
         train_patterns = self._series_to_patterns(train_series, self.breakpoints)
-        self.pattern_dictionary = set(train_patterns)
-        self.transition_model = TransitionModel(self.config.smoothing_alpha).fit(train_patterns)
+        unique_patterns = sorted(set(train_patterns))
+
+        if dictionary_holdout_ratio > 0 and len(unique_patterns) > 1:
+            rng = np.random.default_rng(holdout_seed)
+            n_hold = max(1, int(len(unique_patterns) * dictionary_holdout_ratio))
+            held_out_idx = rng.choice(len(unique_patterns), size=n_hold, replace=False)
+            self.held_out_patterns = {unique_patterns[i] for i in held_out_idx}
+            self.pattern_dictionary = set(unique_patterns) - self.held_out_patterns
+        else:
+            self.held_out_patterns = set()
+            self.pattern_dictionary = set(unique_patterns)
+
+        mapped_train_patterns = []
+        for pattern in train_patterns:
+            mapped, _, _ = map_pattern(pattern, self.pattern_dictionary)
+            mapped_train_patterns.append(mapped)
+        self.transition_model = TransitionModel(self.config.smoothing_alpha).fit(mapped_train_patterns)
 
         if val_series is not None and val_labels is not None and len(val_series) > 0:
             val_probs = self._path_probabilities(val_series)
@@ -214,5 +237,3 @@ def _f1_score(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     if precision + recall == 0:
         return 0.0
     return 2 * precision * recall / (precision + recall)
-
-# Segment-level label alignment for BATADAL evaluation.

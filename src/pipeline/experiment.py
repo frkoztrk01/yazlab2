@@ -56,8 +56,9 @@ def run_automata_fold(
     alphabet_size: int | None = None,
 ) -> dict[str, Any]:
     auto_cfg = config["automata"]
+    pca_seed = config.get("pca_random_state")
     preprocessor = Preprocessor()
-    preprocessor.fit(train_df, feature_cols, use_pca=True)
+    preprocessor.fit(train_df, feature_cols, use_pca=True, pca_random_state=pca_seed)
 
     train_pc1 = preprocessor.transform(train_df, return_pc1=True)
     val_pc1 = preprocessor.transform(val_df, return_pc1=True)
@@ -79,8 +80,16 @@ def run_automata_fold(
     y_val = _labels_from_df(val_df, feature_cols)
     y_test = _labels_from_df(test_df, feature_cols)
 
+    holdout_ratio = auto_cfg.get("unseen_holdout_ratio", 0.0) if scenario == "unseen" else 0.0
+
     start = time.perf_counter()
-    model.fit(train_pc1, val_pc1, y_val)
+    model.fit(
+        train_pc1,
+        val_pc1,
+        y_val,
+        dictionary_holdout_ratio=holdout_ratio,
+        holdout_seed=seed,
+    )
     train_time = time.perf_counter() - start
 
     start = time.perf_counter()
@@ -112,8 +121,8 @@ def run_automata_fold(
         "training_time_sec": train_time,
         "inference_time_sec": inference_time,
         "unseen_count": unseen_count,
-        "mapping_accuracy": mapping_correct / max(unseen_count, 1),
-        "detection_rate_unseen": detection_rate,
+        "mapping_accuracy": (mapping_correct / unseen_count) if unseen_count > 0 else None,
+        "detection_rate_unseen": detection_rate if unseen_count > 0 else None,
         "threshold": model.threshold,
         "y_true": y_test_aligned.tolist(),
         "y_pred": preds.tolist(),
@@ -141,7 +150,7 @@ def run_dl_fold(
     seed: int,
 ) -> dict[str, Any]:
     preprocessor = Preprocessor()
-    preprocessor.fit(train_df, feature_cols, use_pca=False)
+    preprocessor.fit(train_df, feature_cols, use_pca=False, pca_random_state=config.get("pca_random_state"))
 
     X_train = preprocessor.transform(train_df)
     X_val = preprocessor.transform(val_df)
